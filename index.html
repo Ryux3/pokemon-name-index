@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Pokemon EN -> JP Index</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <main class="main-pane">
+        <header class="topbar">
+          <div>
+            <h1>Pokemon Name Index</h1>
+            <p>英語名から日本語名をすぐ確認</p>
+          </div>
+          <div class="counter" aria-live="polite">
+            <strong id="matchCount">1025</strong>
+            <span>results</span>
+          </div>
+        </header>
+
+        <section class="search-panel" aria-label="検索">
+          <div class="search-box">
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <path d="m21 21-4.35-4.35m1.35-5.65a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z" />
+            </svg>
+            <input
+              id="searchInput"
+              type="text"
+              placeholder="English name..."
+              autocomplete="off"
+              autocapitalize="off"
+              spellcheck="false"
+              autofocus
+            />
+            <button id="clearButton" class="icon-button" type="button" aria-label="検索をクリア">
+              <svg aria-hidden="true" viewBox="0 0 24 24">
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <div id="activeLetter" class="active-letter">All</div>
+        </section>
+
+        <section id="results" class="results" aria-label="検索結果"></section>
+      </main>
+
+      <aside class="detail-pane" aria-label="選択中のポケモン">
+        <div class="detail-card">
+          <div class="detail-kicker">Selected</div>
+          <div class="detail-number" id="detailNumber">#001</div>
+          <h2 id="detailEnglish">Bulbasaur</h2>
+          <div id="detailJapanese" class="detail-japanese">フシギダネ</div>
+          <div id="detailTypes" class="type-stack"></div>
+          <button id="copyButton" class="copy-button" type="button">
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <path d="M8 8h10v12H8z" />
+              <path d="M6 16H4V4h12v2" />
+            </svg>
+            <span>日本語名をコピー</span>
+          </button>
+          <div id="copyStatus" class="copy-status" aria-live="polite"></div>
+        </div>
+      </aside>
+
+      <aside id="letterRail" class="letter-rail" aria-label="アルファベット索引">
+        <div id="letterBubble" class="letter-bubble" aria-hidden="true">A</div>
+        <div class="rail-title">A-Z</div>
+        <div id="letterButtons" class="letter-buttons"></div>
+      </aside>
+    </div>
+
+    <script src="./pokemon-data.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
