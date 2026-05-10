@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Pokemon EN -> JP Index</title>
     <link rel="icon" href="data:," />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <meta name="theme-color" content="#ffffff" />
+    <link rel="apple-touch-icon" href="./icon-192.png" />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
@@ -15,9 +18,18 @@
             <h1>Pokemon Name Index</h1>
             <p>英語名から日本語名をすぐ確認</p>
           </div>
-          <div class="counter" aria-live="polite">
-            <strong id="matchCount">1025</strong>
-            <span>results</span>
+          <div class="topbar-actions">
+            <button id="installButton" class="install-button" type="button" hidden>
+              <svg aria-hidden="true" viewBox="0 0 24 24">
+                <path d="M12 3v12m0 0 4-4m-4 4-4-4" />
+                <path d="M5 17v3h14v-3" />
+              </svg>
+              <span>Install</span>
+            </button>
+            <div class="counter" aria-live="polite">
+              <strong id="matchCount">1025</strong>
+              <span>results</span>
+            </div>
           </div>
         </header>
 

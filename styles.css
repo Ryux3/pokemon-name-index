@@ -99,6 +99,41 @@ h1 {
   padding-left: 20px;
 }
 
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.install-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fff;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 850;
+  padding: 0 12px;
+}
+
+.install-button[hidden] {
+  display: none;
+}
+
+.install-button svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
 .counter strong {
   font-size: 25px;
   line-height: 1;
@@ -631,7 +666,7 @@ h1 {
   padding: 16px 0;
 }
 
-.detail-grid div {
+.detail-grid > div {
   display: grid;
   grid-template-columns: minmax(110px, 1fr) minmax(0, 1fr);
   gap: 10px;
@@ -642,11 +677,33 @@ h1 {
 
 .detail-grid .wide {
   grid-column: 1 / -1;
+  display: block;
+}
+
+.detail-grid .wide > span {
+  display: block;
+  margin-bottom: 8px;
 }
 
 .detail-grid strong {
   color: var(--text);
   font-weight: 760;
+}
+
+.ability-line {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.ability-line:last-child {
+  margin-bottom: 0;
+}
+
+.ability-line span {
+  color: var(--text);
+  font-weight: 650;
 }
 
 .modal-section {
@@ -678,6 +735,23 @@ h1 {
   font-weight: 700;
   line-height: 1.45;
   padding: 9px 10px;
+}
+
+.evolution-family strong {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.evolution-family strong span {
+  color: var(--muted);
+  font-weight: 760;
+}
+
+.evolution-family p {
+  margin: 4px 0 0;
 }
 
 .type-chart {
@@ -803,6 +877,19 @@ h1 {
     padding-left: 14px;
   }
 
+  .topbar-actions {
+    gap: 8px;
+  }
+
+  .install-button {
+    min-height: 34px;
+    padding: 0 9px;
+  }
+
+  .install-button span {
+    display: none;
+  }
+
   .search-panel {
     top: 74px;
     grid-template-columns: minmax(0, 1fr) 52px;
@@ -904,6 +991,11 @@ h1 {
 
   .detail-grid {
     grid-template-columns: 1fr;
+  }
+
+  .ability-line {
+    grid-template-columns: 1fr;
+    gap: 2px;
   }
 
   .type-chart {

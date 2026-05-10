@@ -67,6 +67,7 @@ const elements = {
   modalTypeChart: document.querySelector("#modalTypeChart"),
   modalStats: document.querySelector("#modalStats"),
   favoriteButton: document.querySelector("#favoriteButton"),
+  installButton: document.querySelector("#installButton"),
 };
 
 const existingLetters = new Set(pokemon.map((item) => item.initial));
@@ -100,6 +101,7 @@ const typeEffectiveness = {
   steel: { fire: 0.5, water: 0.5, electric: 0.5, ice: 2, rock: 2, steel: 0.5, fairy: 2 },
   fairy: { fire: 0.5, fighting: 2, poison: 0.5, dragon: 2, dark: 2, steel: 0.5 },
 };
+let deferredInstallPrompt = null;
 
 function toSearchKey(value) {
   return String(value)
@@ -294,7 +296,16 @@ function renderModal(item) {
   const stats = detail.stats || {};
   const total = statLabels.reduce((sum, [key]) => sum + (stats[key] || 0), 0);
   const abilities = detail.abilities?.length
-    ? detail.abilities.map((ability) => `${ability.ja}${ability.hidden ? "（隠れ）" : ""}`).join("<br>")
+    ? detail.abilities
+        .map(
+          (ability) => `
+            <div class="ability-line">
+              <strong>${ability.ja}${ability.hidden ? "（隠れ）" : ""}</strong>
+              <span>${ability.effect || "効果説明は未収録です。"}</span>
+            </div>
+          `,
+        )
+        .join("")
     : "-";
   const favorite = isFavorite(item.id);
 
@@ -316,8 +327,22 @@ function renderModal(item) {
   `;
 
   const evolutions = detail.evolutions || [];
-  elements.modalEvolution.innerHTML = evolutions.length
-    ? evolutions.map((text) => `<div>${text}</div>`).join("")
+  const familyEvolutions = detail.familyEvolutions?.length
+    ? detail.familyEvolutions
+    : evolutions.length
+      ? [{ sourceId: item.id, sourceEnglish: item.english, sourceJapanese: item.japanese, methods: evolutions }]
+      : [];
+  elements.modalEvolution.innerHTML = familyEvolutions.length
+    ? familyEvolutions
+        .map(
+          (entry) => `
+            <div class="evolution-family">
+              <strong>${padId(entry.sourceId)} ${entry.sourceJapanese} <span>${entry.sourceEnglish}</span></strong>
+              ${entry.methods.map((text) => `<p>${text}</p>`).join("")}
+            </div>
+          `,
+        )
+        .join("")
     : "<div>Pokemon Unbound上の進化方法データはありません。</div>";
 
   const chart = defensiveChart(item);
@@ -538,6 +563,31 @@ document.addEventListener("keydown", (event) => {
     else elements.clear.click();
   }
 });
+
+window.addEventListener("beforeinstallprompt", (event) => {
+  event.preventDefault();
+  deferredInstallPrompt = event;
+  elements.installButton.hidden = false;
+});
+
+elements.installButton.addEventListener("click", async () => {
+  if (!deferredInstallPrompt) return;
+  deferredInstallPrompt.prompt();
+  await deferredInstallPrompt.userChoice;
+  deferredInstallPrompt = null;
+  elements.installButton.hidden = true;
+});
+
+window.addEventListener("appinstalled", () => {
+  deferredInstallPrompt = null;
+  elements.installButton.hidden = true;
+});
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./service-worker.js");
+  });
+}
 
 renderRail();
 render();
