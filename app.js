@@ -30,11 +30,15 @@ const typeColors = {
   fairy: "#c95a96",
 };
 
+const favoriteStorageKey = "pokemon-name-index:favorites";
+
 const state = {
   query: "",
   selectedId: pokemon[0].id,
   activeLetter: "All",
   railIndex: -1,
+  favorites: loadFavorites(),
+  modalOpen: false,
 };
 
 const elements = {
@@ -52,9 +56,50 @@ const elements = {
   detailTypes: document.querySelector("#detailTypes"),
   copy: document.querySelector("#copyButton"),
   copyStatus: document.querySelector("#copyStatus"),
+  favoritesBar: document.querySelector("#favoritesBar"),
+  modal: document.querySelector("#detailModal"),
+  modalNumber: document.querySelector("#modalNumber"),
+  modalEnglish: document.querySelector("#modalEnglish"),
+  modalJapanese: document.querySelector("#modalJapanese"),
+  modalTypes: document.querySelector("#modalTypes"),
+  modalBasics: document.querySelector("#modalBasics"),
+  modalEvolution: document.querySelector("#modalEvolution"),
+  modalTypeChart: document.querySelector("#modalTypeChart"),
+  modalStats: document.querySelector("#modalStats"),
+  favoriteButton: document.querySelector("#favoriteButton"),
 };
 
 const existingLetters = new Set(pokemon.map((item) => item.initial));
+const details = window.POKEMON_DETAILS || {};
+const statLabels = [
+  ["hp", "HP"],
+  ["attack", "Attack"],
+  ["defense", "Defense"],
+  ["special-attack", "Sp. Atk"],
+  ["special-defense", "Sp. Def"],
+  ["speed", "Speed"],
+];
+const defenseOrder = ["4x", "2x", "1x", "1/2x", "1/4x", "0x"];
+const typeEffectiveness = {
+  normal: { rock: 0.5, ghost: 0, steel: 0.5 },
+  fire: { fire: 0.5, water: 0.5, grass: 2, ice: 2, bug: 2, rock: 0.5, dragon: 0.5, steel: 2 },
+  water: { fire: 2, water: 0.5, grass: 0.5, ground: 2, rock: 2, dragon: 0.5 },
+  electric: { water: 2, electric: 0.5, grass: 0.5, ground: 0, flying: 2, dragon: 0.5 },
+  grass: { fire: 0.5, water: 2, grass: 0.5, poison: 0.5, ground: 2, flying: 0.5, bug: 0.5, rock: 2, dragon: 0.5, steel: 0.5 },
+  ice: { fire: 0.5, water: 0.5, grass: 2, ice: 0.5, ground: 2, flying: 2, dragon: 2, steel: 0.5 },
+  fighting: { normal: 2, ice: 2, poison: 0.5, flying: 0.5, psychic: 0.5, bug: 0.5, rock: 2, ghost: 0, dark: 2, steel: 2, fairy: 0.5 },
+  poison: { grass: 2, poison: 0.5, ground: 0.5, rock: 0.5, ghost: 0.5, steel: 0, fairy: 2 },
+  ground: { fire: 2, electric: 2, grass: 0.5, poison: 2, flying: 0, bug: 0.5, rock: 2, steel: 2 },
+  flying: { electric: 0.5, grass: 2, fighting: 2, bug: 2, rock: 0.5, steel: 0.5 },
+  psychic: { fighting: 2, poison: 2, psychic: 0.5, dark: 0, steel: 0.5 },
+  bug: { fire: 0.5, grass: 2, fighting: 0.5, poison: 0.5, flying: 0.5, psychic: 2, ghost: 0.5, dark: 2, steel: 0.5, fairy: 0.5 },
+  rock: { fire: 2, ice: 2, fighting: 0.5, ground: 0.5, flying: 2, bug: 2, steel: 0.5 },
+  ghost: { normal: 0, psychic: 2, ghost: 2, dark: 0.5 },
+  dragon: { dragon: 2, steel: 0.5, fairy: 0 },
+  dark: { fighting: 0.5, psychic: 2, ghost: 2, dark: 0.5, fairy: 0.5 },
+  steel: { fire: 0.5, water: 0.5, electric: 0.5, ice: 2, rock: 2, steel: 0.5, fairy: 2 },
+  fairy: { fire: 0.5, fighting: 2, poison: 0.5, dragon: 2, dark: 2, steel: 0.5 },
+};
 
 function toSearchKey(value) {
   return String(value)
@@ -88,6 +133,30 @@ function highlight(text) {
 function typeChip(type) {
   const color = typeColors[type.en] || "#627083";
   return `<span class="type-chip" style="--chip: ${color}">${type.ja}</span>`;
+}
+
+function loadFavorites() {
+  try {
+    return JSON.parse(localStorage.getItem(favoriteStorageKey) || "[]");
+  } catch {
+    return [];
+  }
+}
+
+function saveFavorites() {
+  localStorage.setItem(favoriteStorageKey, JSON.stringify(state.favorites));
+}
+
+function isFavorite(id) {
+  return state.favorites.includes(Number(id));
+}
+
+function formatValue(value, suffix = "") {
+  return value == null ? "-" : `${value}${suffix}`;
+}
+
+function getPokemonById(id) {
+  return pokemon.find((item) => item.id === Number(id));
 }
 
 function filteredPokemon() {
@@ -152,6 +221,31 @@ function renderResults() {
     .join("");
 }
 
+function renderFavorites() {
+  const favorites = state.favorites.map(getPokemonById).filter(Boolean);
+  if (!favorites.length) {
+    elements.favoritesBar.hidden = true;
+    elements.favoritesBar.innerHTML = "";
+    return;
+  }
+  elements.favoritesBar.hidden = false;
+  elements.favoritesBar.innerHTML = `
+    <div class="favorites-title">Favorites</div>
+    <div class="favorite-list">
+      ${favorites
+        .map(
+          (item) => `
+            <button class="favorite-chip" type="button" data-id="${item.id}">
+              <span>${item.japanese}</span>
+              <small>${item.english}</small>
+            </button>
+          `,
+        )
+        .join("")}
+    </div>
+  `;
+}
+
 function renderDetail() {
   const selected = pokemon.find((item) => item.id === state.selectedId) || filteredPokemon()[0] || pokemon[0];
   state.selectedId = selected.id;
@@ -164,7 +258,133 @@ function renderDetail() {
 function render() {
   renderResults();
   renderDetail();
+  renderFavorites();
   updateRailActiveClasses();
+}
+
+function defensiveChart(item) {
+  const multipliers = Object.keys(typeColors).map((attackType) => {
+    const multiplier = item.types.reduce((value, defendType) => {
+      return value * (typeEffectiveness[attackType]?.[defendType.en] ?? 1);
+    }, 1);
+    return { attackType, multiplier };
+  });
+
+  const groups = Object.fromEntries(defenseOrder.map((key) => [key, []]));
+  multipliers.forEach((entry) => {
+    const key =
+      entry.multiplier === 4
+        ? "4x"
+        : entry.multiplier === 2
+          ? "2x"
+          : entry.multiplier === 0.5
+            ? "1/2x"
+            : entry.multiplier === 0.25
+              ? "1/4x"
+              : entry.multiplier === 0
+                ? "0x"
+                : "1x";
+    groups[key].push(entry.attackType);
+  });
+  return groups;
+}
+
+function renderModal(item) {
+  const detail = details[item.id] || {};
+  const stats = detail.stats || {};
+  const total = statLabels.reduce((sum, [key]) => sum + (stats[key] || 0), 0);
+  const abilities = detail.abilities?.length
+    ? detail.abilities.map((ability) => `${ability.ja}${ability.hidden ? "（隠れ）" : ""}`).join("<br>")
+    : "-";
+  const favorite = isFavorite(item.id);
+
+  elements.modalNumber.textContent = padId(item.id);
+  elements.modalEnglish.textContent = item.english;
+  elements.modalJapanese.textContent = item.japanese;
+  elements.modalTypes.innerHTML = item.types.map(typeChip).join("");
+  elements.favoriteButton.classList.toggle("active", favorite);
+  elements.favoriteButton.setAttribute("aria-label", favorite ? "お気に入りから外す" : "お気に入りに追加");
+
+  elements.modalBasics.innerHTML = `
+    <div><span>National Dex</span><strong>${padId(item.id).replace("#", "")}</strong></div>
+    <div><span>Height</span><strong>${formatValue(detail.height, " m")}</strong></div>
+    <div><span>Weight</span><strong>${formatValue(detail.weight, " kg")}</strong></div>
+    <div><span>Base EXP</span><strong>${formatValue(detail.baseExperience)}</strong></div>
+    <div><span>Catch Rate</span><strong>${formatValue(detail.catchRate)}</strong></div>
+    <div><span>Base Friendship</span><strong>${formatValue(detail.baseFriendship)}</strong></div>
+    <div class="wide"><span>Abilities</span><strong>${abilities}</strong></div>
+  `;
+
+  const evolutions = detail.evolutions || [];
+  elements.modalEvolution.innerHTML = evolutions.length
+    ? evolutions.map((text) => `<div>${text}</div>`).join("")
+    : "<div>Pokemon Unbound上の進化方法データはありません。</div>";
+
+  const chart = defensiveChart(item);
+  elements.modalTypeChart.innerHTML = defenseOrder
+    .map(
+      (label) => `
+        <div class="chart-column">
+          <strong>${label}</strong>
+          <div>${chart[label].length ? chart[label].map((type) => typeChip({ en: type, ja: typeJaName(type) })).join("") : "<span class=\"none\">-</span>"}</div>
+        </div>
+      `,
+    )
+    .join("");
+
+  elements.modalStats.innerHTML =
+    statLabels
+      .map(([key, label]) => {
+        const value = stats[key] || 0;
+        return `
+          <div class="stat-row">
+            <span>${label}</span>
+            <div class="stat-track"><i style="width: ${Math.min(100, (value / 180) * 100)}%"></i></div>
+            <strong>${value || "-"}</strong>
+          </div>
+        `;
+      })
+      .join("") +
+    `
+      <div class="stat-row total">
+        <span>Total</span>
+        <div class="stat-track"><i style="width: ${Math.min(100, (total / 720) * 100)}%"></i></div>
+        <strong>${total || "-"}</strong>
+      </div>
+    `;
+}
+
+function typeJaName(type) {
+  const sample = pokemon.find((item) => item.types.some((entry) => entry.en === type));
+  return sample?.types.find((entry) => entry.en === type)?.ja || type;
+}
+
+function openModal(id) {
+  const item = getPokemonById(id);
+  if (!item) return;
+  state.selectedId = item.id;
+  state.modalOpen = true;
+  renderDetail();
+  renderModal(item);
+  elements.modal.hidden = false;
+  document.body.classList.add("modal-open");
+}
+
+function closeModal() {
+  state.modalOpen = false;
+  elements.modal.hidden = true;
+  document.body.classList.remove("modal-open");
+}
+
+function toggleFavorite(id) {
+  const numericId = Number(id);
+  state.favorites = isFavorite(numericId)
+    ? state.favorites.filter((favoriteId) => favoriteId !== numericId)
+    : [numericId, ...state.favorites].slice(0, 30);
+  saveFavorites();
+  renderFavorites();
+  const item = getPokemonById(numericId);
+  if (item && state.modalOpen) renderModal(item);
 }
 
 function jumpToLetter(letter, options = {}) {
@@ -277,7 +497,23 @@ elements.rail.addEventListener("lostpointercapture", releaseRailPointer);
 
 elements.results.addEventListener("click", (event) => {
   const row = event.target.closest(".result-row");
-  if (row) setSelected(row.dataset.id);
+  if (row) {
+    setSelected(row.dataset.id);
+    openModal(row.dataset.id);
+  }
+});
+
+elements.favoritesBar.addEventListener("click", (event) => {
+  const chip = event.target.closest(".favorite-chip");
+  if (chip) openModal(chip.dataset.id);
+});
+
+elements.favoriteButton.addEventListener("click", () => {
+  toggleFavorite(state.selectedId);
+});
+
+elements.modal.addEventListener("click", (event) => {
+  if (event.target.closest("[data-close-modal]")) closeModal();
 });
 
 elements.copy.addEventListener("click", async () => {
@@ -298,7 +534,8 @@ document.addEventListener("keydown", (event) => {
     elements.search.select();
   }
   if (event.key === "Escape") {
-    elements.clear.click();
+    if (state.modalOpen) closeModal();
+    else elements.clear.click();
   }
 });
 
